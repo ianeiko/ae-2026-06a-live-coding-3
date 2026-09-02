@@ -81,10 +81,10 @@ identity, zero shared secrets.
 
 ## Acceptance criteria
 
-- [ ] Production URL loads and sign-in works.
+- [x] Production URL loads and sign-in works.
 - [x] `curl -i https://ae-2026-06a-live-coding-3.vercel.app/mcp` → 401 with `WWW-Authenticate`.
 - [x] No `localhost` anywhere in the `.well-known` responses.
-- [ ] Claude Code authenticates against the deployed server and calls the tool.
+- [x] Claude Code authenticates against the deployed server and calls the tool.
 - [ ] A second person, with their own Clerk account, gets their own name back.
 
 ## Stretch
