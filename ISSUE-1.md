@@ -47,7 +47,7 @@ the most common way this exercise fails.
 Prompt Claude Code with something like:
 
 > Add Clerk auth to this Next.js app using the `clerk-setup` skill. Add
-> `clerkMiddleware` in `middleware.ts`, wrap the app in `<ClerkProvider>`, and
+> `clerkMiddleware` in `proxy.ts`, wrap the app in `<ClerkProvider>`, and
 > put `<SignInButton />` / `<UserButton />` in the header slot in
 > `app/layout.tsx`. Keep the chat page public.
 
@@ -78,13 +78,15 @@ What should come out of that (review it, don't just accept it):
 | `app/[transport]/route.ts` | `createMcpHandler` wrapped in `withMcpAuth` + `verifyClerkToken`, serving `/mcp`. |
 | `app/.well-known/oauth-protected-resource/mcp/route.ts` | `protectedResourceHandlerClerk` — tells clients where to authenticate. |
 | `app/.well-known/oauth-authorization-server/route.ts` | `authServerMetadataHandlerClerk` — back-compat for older clients. |
-| `middleware.ts` | The `.well-known` routes and `/mcp` must be reachable without a session cookie. |
+| `proxy.ts` | The `.well-known` routes and `/mcp` must be reachable without a session cookie. |
 
 Two details worth checking yourself, because they are the usual bugs:
 
 - `auth({ acceptsToken: 'oauth_token' })` — not the default session token.
 - `withMcpAuth(..., { required: true, resourceMetadataPath: '/.well-known/oauth-protected-resource/mcp' })`
   — without that path the client can't discover how to log in.
+- Next.js 16 renamed `middleware.ts` to `proxy.ts` — same `clerkMiddleware()`
+  call, new filename.
 
 ### 5. Connect Claude Code
 
@@ -115,15 +117,21 @@ Clerk profile name. That round trip — Claude Code → OAuth → your route →
 
 ## Acceptance criteria
 
-- [ ] `npm run check` passes.
-- [ ] Signed-in chat at `/` greets you by name.
-- [ ] `curl -i localhost:3000/mcp` returns **401** with a
+- [x] `npm run check` passes.
+- [x] Signed-in chat at `/` greets you by name.
+- [x] `curl -i localhost:3000/mcp` returns **401** with a
       `WWW-Authenticate` header pointing at the resource metadata.
-- [ ] `curl -s localhost:3000/.well-known/oauth-protected-resource/mcp | jq`
+- [x] `curl -s localhost:3000/.well-known/oauth-protected-resource/mcp | jq`
       returns JSON naming your Clerk instance as the authorization server.
-- [ ] `/mcp` in Claude Code shows `pirate` connected after authenticating.
-- [ ] Claude Code calls `ask-the-pirate` and the reply is personalised.
-- [ ] Signing out of Clerk and revoking the app makes the tool fail with 401.
+- [x] `/mcp` in Claude Code shows `pirate` connected after authenticating.
+- [x] Claude Code calls `ask-the-pirate` and the reply is personalised.
+
+The unauthenticated 401 above already proves the door is shut; don't revoke the
+grant to re-prove it — Claude Code's OAuth client is a *dynamically registered*
+app, so deleting it means re-registering and re-authenticating before the tool
+works again. If you want to look at the grant, it's in Dashboard → your app →
+**Configure** → **OAuth Applications** → *Claude Code (pirate)* (instance-level,
+not under your user).
 
 ## Stretch
 
