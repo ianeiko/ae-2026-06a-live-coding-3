@@ -30,7 +30,7 @@ echo "ISSUE-1 - Clerk auth"
 has_dep @clerk/nextjs && ok "@clerk/nextjs installed" || todo "not yet: @clerk/nextjs"
 env_set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && ok "publishable key set" || todo "not yet: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
 env_set CLERK_SECRET_KEY && ok "secret key set" || todo "not yet: CLERK_SECRET_KEY"
-{ [ -f middleware.ts ] || [ -f src/middleware.ts ]; } && ok "middleware.ts exists" || todo "not yet: middleware.ts with clerkMiddleware"
+{ [ -f proxy.ts ] || [ -f src/proxy.ts ] || [ -f middleware.ts ] || [ -f src/middleware.ts ]; } && ok "proxy.ts/middleware.ts exists" || todo "not yet: proxy.ts (Next 16) or middleware.ts with clerkMiddleware"
 grep -rqs "ClerkProvider" app/ && ok "<ClerkProvider> wired in app/" || todo "not yet: <ClerkProvider> in app/layout.tsx"
 
 echo
