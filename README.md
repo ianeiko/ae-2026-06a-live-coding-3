@@ -150,3 +150,6 @@ the typist.
 | Server green in `/mcp` but no `ask-the-pirate` tool | Tools load at startup — restart Claude Code. |
 | `inputSchema` type errors in `app/[transport]/route.ts` | `mcp-handler` 2.x wants zod 4; `npm install zod@^4`. |
 | Chat UI works, MCP doesn't | Good. That's the expected starting state. |
+| Deployed `.well-known` still advertises a wrong host | `protectedResourceHandlerClerk` reads the origin off `req.url`, which behind Vercel's proxy is the internal host. Build `resourceUrl` from `x-forwarded-host` instead — ISSUE-2 §2. |
+| Deployed sign-in dead, keys are set in Vercel | `NEXT_PUBLIC_*` is inlined at build time. Redeploy after adding it. |
+| `claude mcp remove` + `add` and the server still won't connect | Stale entry. `/mcp` → Reconnect, then Authenticate. |

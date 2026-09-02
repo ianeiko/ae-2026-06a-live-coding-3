@@ -50,11 +50,18 @@ if [ -n "${MCP_URL:-}" ]; then
   echo "Live check - $MCP_URL"
   code=$(curl -s -o /dev/null -w '%{http_code}' "$MCP_URL/mcp")
   [ "$code" = "401" ] && ok "/mcp returns 401 (auth required)" || no "/mcp returned $code, expected 401"
-  curl -s "$MCP_URL/.well-known/oauth-protected-resource/mcp" | grep -q authorization_servers \
+  meta=$(curl -s "$MCP_URL/.well-known/oauth-protected-resource/mcp")
+  echo "$meta" | grep -q authorization_servers \
     && ok "protected-resource metadata served" || no "no protected-resource metadata"
+  case "$MCP_URL" in
+    *localhost*|*127.0.0.1*) ;;
+    *) echo "$meta" | grep -q "localhost" \
+         && no "metadata still advertises localhost" \
+         || ok "no localhost in protected-resource metadata" ;;
+  esac
 else
   echo
-  todo "set MCP_URL=http://localhost:3000 to run live HTTP checks"
+  todo "set MCP_URL=http://localhost:3000 (or your https://<app>.vercel.app) to run live HTTP checks"
 fi
 
 echo

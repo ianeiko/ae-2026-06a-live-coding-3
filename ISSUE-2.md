@@ -37,6 +37,11 @@ dashboard):
 
 Then `npx vercel --prod`.
 
+Set the env vars **before** the production build, not after.
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is inlined into the client bundle at build
+time, so a deploy that ran without it stays broken until you redeploy — the
+value appearing in `vercel env ls` afterwards changes nothing.
+
 You can also just ask Claude Code — the Vercel skills and MCP server are
 available in this repo.
 
@@ -45,7 +50,15 @@ available in this repo.
 Metadata documents advertise absolute URLs. If anything still says
 `http://localhost:3000`, clients will try to authenticate there.
 
-Have Claude Code derive the base URL from the incoming request or from
+The obstacle is not that someone hardcoded `localhost` — nobody did. It is
+that Clerk's `protectedResourceHandlerClerk` derives the origin from `req.url`,
+and behind Vercel's proxy `req.url` carries the *internal* host, not the one
+the client dialled. The fix is to stop using that handler and call
+`generateClerkProtectedResourceMetadata` (from `@clerk/mcp-tools/server`)
+yourself, passing a `resourceUrl` you built from the request.
+
+Have Claude Code derive the base URL from the incoming request
+(`x-forwarded-host` + `x-forwarded-proto`) or from
 `VERCEL_PROJECT_PRODUCTION_URL` rather than hardcoding it, and re-check:
 
 ```bash
@@ -70,6 +83,10 @@ claude mcp add --transport http pirate https://<your-app>.vercel.app/mcp
 ```
 
 `/mcp` → authenticate → ask it something.
+
+If `pirate` was already in your config pointing at localhost, `remove` + `add`
+may leave Claude Code holding the stale, unreachable entry. In `/mcp`, pick
+**Reconnect** first, then **Authenticate**.
 
 ### 5. Share it
 
