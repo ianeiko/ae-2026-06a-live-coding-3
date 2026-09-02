@@ -37,10 +37,19 @@ CLERK_SECRET_KEY=sk_test_...
 `clerk env pull` can do this for you — ask Claude Code to use the `clerk-cli`
 skill.
 
-**Then turn on dynamic client registration.** Dashboard → **OAuth
-Applications** → enable *Dynamic client registration*. Without it Claude Code
-cannot register itself and the login prompt never appears. This one setting is
-the most common way this exercise fails.
+**Then turn on dynamic client registration.** Dashboard → **Configure** →
+**OAuth Applications** → enable *Dynamic client registration*. Without it
+Claude Code cannot register itself and the login prompt never appears. This one
+setting is the most common way this exercise fails.
+
+The toggle is easy to miss in the dashboard; the CLI is unambiguous:
+
+```bash
+clerk link                                   # pick your app
+clerk api /instance/oauth_application_settings | jq .dynamic_oauth_client_registration
+clerk api /instance/oauth_application_settings -X PATCH \
+  -d '{"dynamic_oauth_client_registration":true}'
+```
 
 ### 2. Add Clerk to the app
 
@@ -87,6 +96,12 @@ Two details worth checking yourself, because they are the usual bugs:
   — without that path the client can't discover how to log in.
 - Next.js 16 renamed `middleware.ts` to `proxy.ts` — same `clerkMiddleware()`
   call, new filename.
+- `mcp-handler` 2.x needs **zod 4**. This repo ships zod 3, so `npm install
+  zod@^4` — otherwise `inputSchema` fails to typecheck against
+  `StandardSchemaWithJSON`.
+- The tool handler's second argument is the request context, and the token lives
+  at `http.authInfo`: `async ({ question }, { http }) => { const userId =
+  http?.authInfo?.extra?.userId as string; … }`.
 
 ### 5. Connect Claude Code
 
@@ -102,6 +117,9 @@ Then in Claude Code:
 
 Pick `pirate` → **Authenticate**. A browser opens, Clerk signs you in, you
 approve. Back in Claude Code the server goes green.
+
+Tools are loaded at startup, so **restart Claude Code** after adding the
+server — otherwise the green server has no callable `ask-the-pirate` yet.
 
 ### 6. Prove it
 

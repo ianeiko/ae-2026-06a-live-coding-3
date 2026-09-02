@@ -145,6 +145,8 @@ the typist.
 | Symptom | Cause |
 | --- | --- |
 | `/mcp` in Claude Code never prompts to log in | Dynamic client registration is off in the Clerk dashboard. |
-| Prompts to log in, then 401 on every tool call | `withMcpAuth` is missing `resourceMetadataPath`, or the well-known routes aren't public in `middleware.ts`. |
+| Prompts to log in, then 401 on every tool call | `withMcpAuth` is missing `resourceMetadataPath`, or the well-known routes aren't public in `proxy.ts` (`middleware.ts` pre-Next 16). |
 | `authInfo` is undefined inside a tool | Token wasn't verified — check `acceptsToken: 'oauth_token'`. |
+| Server green in `/mcp` but no `ask-the-pirate` tool | Tools load at startup — restart Claude Code. |
+| `inputSchema` type errors in `app/[transport]/route.ts` | `mcp-handler` 2.x wants zod 4; `npm install zod@^4`. |
 | Chat UI works, MCP doesn't | Good. That's the expected starting state. |
