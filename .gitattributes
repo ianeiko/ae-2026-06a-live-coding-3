@@ -1,0 +1,4 @@
+# Git for Windows defaults to core.autocrlf=true, which would check this out
+# with CRLF endings. bash then fails on the shebang line with the famously
+# unhelpful `$'\r': command not found`. Pin shell scripts to LF.
+*.sh text eol=lf
