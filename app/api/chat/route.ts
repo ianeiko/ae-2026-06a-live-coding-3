@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createTextStreamResponse } from "ai";
 import type { UIMessage, TextUIPart } from "ai";
 
+import { currentUser } from "@clerk/nextjs/server";
+
 import { buildAgent } from "@/lib/agent";
 
 /**
@@ -19,11 +21,18 @@ export async function POST(req: NextRequest) {
       .join("");
 
     if (!question) {
-      return NextResponse.json({ error: "No message provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No message provided" },
+        { status: 400 },
+      );
     }
 
-    // ISSUE-1: pass the signed-in Clerk user's name in here.
-    const stream = await buildAgent().stream(question);
+    // Anonymous visitors are fine: currentUser() returns null and the agent
+    // falls back to its "I don't know your name" persona.
+    const user = await currentUser();
+    const userName = user?.firstName ?? user?.username ?? undefined;
+
+    const stream = await buildAgent(userName).stream(question);
 
     return createTextStreamResponse({ stream });
   } catch (e: any) {
