@@ -18,7 +18,7 @@ node -e 'process.exit(parseInt(process.versions.node) >= 22 ? 0 : 1)' \
 [ -d node_modules ] && ok "dependencies installed" || no "run: npm install"
 [ -f .env ] && ok ".env exists" || no "run: cp .env.example .env"
 env_set OPENROUTER_API_KEY && ok "OPENROUTER_API_KEY set" || no "OPENROUTER_API_KEY missing in .env"
-command -v clerk >/dev/null && ok "clerk CLI on PATH" || todo "npm i -g @clerk/cli  (optional but handy)"
+command -v clerk >/dev/null && ok "clerk CLI on PATH" || todo "npm i -g clerk  (optional but handy)"
 if ls -d .claude/skills/clerk-* .agents/skills/clerk-* >/dev/null 2>&1; then
   ok "clerk skills installed"
 else

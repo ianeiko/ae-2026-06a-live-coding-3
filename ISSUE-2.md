@@ -20,6 +20,9 @@ most of the OAuth metadata.
 
 ## Steps
 
+> The one-shot prompt for this issue is in the README ("Prompts to paste into
+> Claude Code").
+
 ### 1. Deploy to Vercel
 
 ```bash

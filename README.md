@@ -58,7 +58,7 @@ Then install the two things that make this easy:
 npx skills add clerk/skills
 
 # 2. Clerk CLI — lets Claude Code read your instance config, keys, users
-npm i -g @clerk/cli && clerk login
+npm i -g clerk && clerk login
 ```
 
 `npx skills add clerk/skills` drops ~15 skills into `.claude/skills/`
@@ -86,16 +86,49 @@ not around it. Each issue tells you what to ask for, not what to type.
 2. **[ISSUE-2.md](./ISSUE-2.md)** — deploy to Vercel, point Claude Code at the
    public URL.
 
-### How to drive Claude Code here
+### Prompts to paste into Claude Code
 
-The failure mode is asking for "add MCP" and getting a plausible-looking
-non-working route. The fix is one line of context:
+Start Claude Code in this directory (`claude`), then paste these verbatim. One
+per issue — each issue file carries the detail, so the prompt just points at it.
 
-> Use the `clerk-setup` and `clerk-nextjs-patterns` skills, and follow
-> `@clerk/mcp-tools` for the MCP server. Read `lib/agent.ts` first.
+**ISSUE-1** (do the Clerk dashboard steps in ISSUE-1 §1 first — including
+*Dynamic client registration* — then paste):
 
-Then let it work. Review the diff before you accept it — you are the reviewer,
-not the typist.
+```
+Read @ISSUE-1.md and @lib/agent.ts, then implement ISSUE-1 step by step.
+
+Use the clerk-setup and clerk-nextjs-patterns skills for the auth work, the
+clerk-cli skill for anything touching my Clerk instance or keys, and follow
+@clerk/mcp-tools + mcp-handler for the MCP server exactly as Clerk's "build an
+MCP server" guide does.
+
+Stop after each numbered step, tell me the verification command to run, and
+wait for me to confirm before moving on. Do not touch ISSUE-2.
+```
+
+**ISSUE-2** (only once ISSUE-1's acceptance criteria pass):
+
+```
+Read @ISSUE-2.md and implement it. Deploy this app to Vercel with the Vercel
+skills, set the env vars from my .env, and make sure nothing in the
+.well-known OAuth metadata still points at localhost — derive the origin from
+the request or VERCEL_PROJECT_PRODUCTION_URL.
+
+Then give me the exact `claude mcp add` command for the deployed URL and walk
+me through the acceptance criteria.
+```
+
+**When something breaks:**
+
+```
+`npm run check` says: <paste output>. Diagnose it against @ISSUE-1.md and fix
+it. Use the clerk-cli skill to inspect my instance config rather than guessing.
+```
+
+The failure mode is asking for "add MCP" with no context and getting a
+plausible-looking non-working route — naming the skills and the library is what
+prevents that. Review the diff before you accept it: you are the reviewer, not
+the typist.
 
 ---
 

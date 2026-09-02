@@ -21,6 +21,9 @@ use them, and to verify the result rather than trust it.
 
 ## Steps
 
+> The one-shot prompt for this issue is in the README ("Prompts to paste into
+> Claude Code"). The per-step prompts below are for driving it manually.
+
 ### 1. Clerk instance
 
 Create an application at [dashboard.clerk.com](https://dashboard.clerk.com)
