@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Public_Sans } from "next/font/google";
+import { ClerkProvider, Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 
 const publicSans = Public_Sans({ subsets: ["latin"] });
@@ -42,27 +43,35 @@ export default function RootLayout({
         />
       </head>
       <body className={publicSans.className}>
-        <div className="bg-secondary grid grid-rows-[auto,1fr] h-[100dvh]">
-          <header className="flex items-center justify-between gap-4 p-4">
-            <div className="flex items-center gap-4">
-              <a
-                href="https://js.langchain.com"
-                rel="noopener noreferrer"
-                target="_blank"
-                className="flex items-center gap-2"
-              >
-                <Logo />
-              </a>
-              <span className="text-sm">🏴‍☠️ Patchy the Pirate</span>
+        <ClerkProvider>
+          <div className="bg-secondary grid grid-rows-[auto,1fr] h-[100dvh]">
+            <header className="flex items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-4">
+                <a
+                  href="https://js.langchain.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  className="flex items-center gap-2"
+                >
+                  <Logo />
+                </a>
+                <span className="text-sm">🏴‍☠️ Patchy the Pirate</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Show when="signed-out">
+                  <SignInButton />
+                </Show>
+                <Show when="signed-in">
+                  <UserButton />
+                </Show>
+              </div>
+            </header>
+            <div className="bg-background mx-4 relative grid rounded-t-2xl border border-input border-b-0">
+              <div className="absolute inset-0">{children}</div>
             </div>
-            {/* ISSUE-1: the sign-in button goes here. */}
-            <div className="flex items-center gap-2" />
-          </header>
-          <div className="bg-background mx-4 relative grid rounded-t-2xl border border-input border-b-0">
-            <div className="absolute inset-0">{children}</div>
           </div>
-        </div>
-        <Toaster />
+          <Toaster />
+        </ClerkProvider>
       </body>
     </html>
   );

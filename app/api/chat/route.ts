@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { type UIMessage, type TextUIPart, createTextStreamResponse } from "ai";
+import { currentUser } from "@clerk/nextjs/server";
 
 import { buildAgent, type ChatTurn } from "@/lib/agent";
 
@@ -21,8 +22,12 @@ export async function POST(req: NextRequest) {
     const history = messages.slice(0, -1).map(toChatTurn);
     const question = getMessageText(messages[messages.length - 1]);
 
-    // No user yet; ISSUE-1 passes the signed-in user's name here.
-    const stream = await buildAgent().stream(question, history);
+    // null when signed out, so the pirate stays anonymous.
+    const user = await currentUser();
+    const stream = await buildAgent(user?.firstName ?? undefined).stream(
+      question,
+      history,
+    );
 
     return createTextStreamResponse({ stream });
   } catch (e: any) {
