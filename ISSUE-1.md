@@ -28,8 +28,17 @@ use them, and to verify the result rather than trust it.
 
 ### 1. Clerk instance
 
-With the Clerk application created and `clerk link`ed (README → Setup), the
-keys go into `.env`:
+Start with `clerk doctor`. It shows whether you're logged in and whether this
+repo is linked to your Clerk application. If it reports **Not linked**, link
+the app you created (README → Setup). Plain `clerk link` opens a picker, which
+fails when Claude Code runs it, so pass the ID:
+
+```bash
+clerk apps list
+clerk link --app <app_id>
+```
+
+Once linked, the keys go into `.env`:
 
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
