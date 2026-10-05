@@ -87,12 +87,18 @@ if [ -n "${MCP_URL:-}" ]; then
       printf '%s' "$headers" | grep -qi '^www-authenticate:.*resource_metadata=.*oauth-protected-resource/mcp' \
         && ok "WWW-Authenticate points at the resource metadata" \
         || no "401 has no WWW-Authenticate resource_metadata (check withMcpAuth resourceMetadataPath)"
+    elif [ "$code" = "302" ]; then
+      no "/mcp returned 302 - a Vercel preview URL behind Deployment Protection? Use the production URL"
     else
       no "/mcp returned $code, expected 401"
     fi
     meta=$(curl -s --max-time 15 "$MCP_URL/.well-known/oauth-protected-resource/mcp")
     echo "$meta" | grep -q authorization_servers \
       && ok "protected-resource metadata served" || no "no protected-resource metadata"
+    resource=$(printf '%s' "$meta" | grep -o '"resource":"[^"]*"' | cut -d'"' -f4)
+    [ "${resource%/}" = "${MCP_URL%/}" ] \
+      && ok "metadata resource is $resource" \
+      || no "metadata resource is '${resource:-missing}', expected ${MCP_URL%/}"
     case "$MCP_URL" in
       *localhost*|*127.0.0.1*) ;;
       *) echo "$meta" | grep -q "localhost" \
