@@ -21,31 +21,30 @@ use them, and to verify the result rather than trust it.
 
 ## Steps
 
-> The one-shot prompt for this issue is in the README ("Prompts to paste into
-> Claude Code"). The per-step prompts below are for driving it manually.
+> The prompt to paste is in the README. The prompts quoted below show what each
+> step asks for. You only need them if you drive the steps one at a time.
 
 ### 1. Clerk instance
 
-Create an application at [dashboard.clerk.com](https://dashboard.clerk.com)
-(email + Google is fine), then put the keys in `.env`:
+With the app created and `clerk link`ed (README → Setup), the keys go into
+`.env`:
 
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 ```
 
-`clerk env pull` can do this for you — ask Claude Code to use the `clerk-cli`
-skill.
+`clerk env pull --file .env` writes them. Without `--file`, it writes
+`.env.local`, which also works, since both Next.js and `npm run check` read it.
 
 **Then turn on dynamic client registration.** Dashboard → **Configure** →
 **OAuth Applications** → enable *Dynamic client registration*. Without it
 Claude Code cannot register itself and the login prompt never appears. This one
 setting is the most common way this exercise fails.
 
-The toggle is easy to miss in the dashboard; the CLI is unambiguous:
+The toggle is easy to miss in the dashboard. The CLI is unambiguous:
 
 ```bash
-clerk link                                   # pick your app
 clerk api /instance/oauth_application_settings | jq .dynamic_oauth_client_registration
 clerk api /instance/oauth_application_settings -X PATCH \
   -d '{"dynamic_oauth_client_registration":true}'
@@ -89,14 +88,14 @@ What should come out of that (review it, don't just accept it):
 | `app/.well-known/oauth-authorization-server/route.ts` | `authServerMetadataHandlerClerk` — back-compat for older clients. |
 | `proxy.ts` | The `.well-known` routes and `/mcp` must be reachable without a session cookie. |
 
-Two details worth checking yourself, because they are the usual bugs:
+Check these yourself, because they cause the usual bugs:
 
 - `auth({ acceptsToken: 'oauth_token' })` — not the default session token.
 - `withMcpAuth(..., { required: true, resourceMetadataPath: '/.well-known/oauth-protected-resource/mcp' })`
   — without that path the client can't discover how to log in.
 - Next.js 16 renamed `middleware.ts` to `proxy.ts` — same `clerkMiddleware()`
   call, new filename.
-- `mcp-handler` 2.x needs **zod 4**. This repo ships zod 3, so `npm install
+- `mcp-handler` 2.x needs **zod 4**. The starter ships zod 3, so `npm install
   zod@^4` — otherwise `inputSchema` fails to typecheck against
   `StandardSchemaWithJSON`.
 - The tool handler's second argument is the request context, and the token lives
@@ -135,14 +134,17 @@ Clerk profile name. That round trip — Claude Code → OAuth → your route →
 
 ## Acceptance criteria
 
-- [x] `npm run check` passes.
-- [x] Signed-in chat at `/` greets you by name.
-- [x] `curl -i localhost:3000/mcp` returns **401** with a
-      `WWW-Authenticate` header pointing at the resource metadata.
-- [x] `curl -s localhost:3000/.well-known/oauth-protected-resource/mcp | jq`
-      returns JSON naming your Clerk instance as the authorization server.
-- [x] `/mcp` in Claude Code shows `pirate` connected after authenticating.
-- [x] Claude Code calls `ask-the-pirate` and the reply is personalised.
+- [ ] With `npm run dev` running, `MCP_URL=http://localhost:3000 npm run check`
+      reports `0 to fix, 0 not yet done`. It confirms the unauthenticated
+      **401** with a `WWW-Authenticate` header pointing at the resource
+      metadata.
+- [ ] `curl -s localhost:3000/.well-known/oauth-protected-resource/mcp | jq`
+      names your Clerk instance under `authorization_servers`.
+- [ ] Signed out, the chat at `/` doesn't know your name. Signed in, it greets
+      you by name.
+- [ ] `/mcp` in Claude Code shows `pirate` as connected after you authenticate.
+- [ ] Claude Code calls `ask-the-pirate`, and the reply uses your Clerk first
+      name. Note the reply you actually got.
 
 The unauthenticated 401 above already proves the door is shut; don't revoke the
 grant to re-prove it — Claude Code's OAuth client is a *dynamically registered*

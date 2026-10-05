@@ -20,12 +20,12 @@ most of the OAuth metadata.
 
 ## Steps
 
-> The one-shot prompt for this issue is in the README ("Prompts to paste into
-> Claude Code").
+> The prompt to paste is in the README.
 
 ### 1. Deploy to Vercel
 
 ```bash
+npx vercel login  # you, once — opens a browser
 npx vercel        # link + preview deploy
 ```
 
@@ -41,9 +41,6 @@ Set the env vars **before** the production build, not after.
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is inlined into the client bundle at build
 time, so a deploy that ran without it stays broken until you redeploy — the
 value appearing in `vercel env ls` afterwards changes nothing.
-
-You can also just ask Claude Code — the Vercel skills and MCP server are
-available in this repo.
 
 ### 2. Fix the URLs OAuth cares about
 
@@ -98,11 +95,14 @@ identity, zero shared secrets.
 
 ## Acceptance criteria
 
-- [x] Production URL loads and sign-in works.
-- [x] `curl -i https://ae-2026-06a-live-coding-3.vercel.app/mcp` → 401 with `WWW-Authenticate`.
-- [x] No `localhost` anywhere in the `.well-known` responses.
-- [x] Claude Code authenticates against the deployed server and calls the tool.
-- [ ] A second person, with their own Clerk account, gets their own name back.
+- [ ] The production URL loads, and signing in works there.
+- [ ] `MCP_URL=https://<your-app>.vercel.app npm run check` reports
+      `0 to fix, 0 not yet done`. That covers the 401 with `WWW-Authenticate`
+      and the absence of `localhost` in the metadata.
+- [ ] Claude Code authenticates against the deployed server and calls the tool.
+- [ ] A second Clerk account gets its own name back from the tool. Ask the
+      person next to you, or do it yourself: add the server again as `pirate2`,
+      then complete its login in a private window as a different Clerk user.
 
 ## Stretch
 

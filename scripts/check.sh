@@ -3,23 +3,26 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-pass=0; fail=0
+pass=0; fail=0; pending=0
 ok()   { printf '  \033[32m[x]\033[0m %s\n' "$1"; pass=$((pass+1)); }
 no()   { printf '  \033[31m[!]\033[0m %s\n' "$1"; fail=$((fail+1)); }
-todo() { printf '  \033[33m[ ]\033[0m %s\n' "$1"; }
+todo() { printf '  \033[33m[ ]\033[0m %s\n' "$1"; pending=$((pending+1)); }
 
-has_dep() { node -e "const p=require('./package.json');process.exit(({...p.dependencies,...p.devDependencies})['$1']?0:1)" 2>/dev/null; }
-env_set() { [ -f .env ] && grep -qE "^$1=.+" .env; }
+# In package.json AND actually installed.
+has_dep() { node -e "const p=require('./package.json');process.exit(({...p.dependencies,...p.devDependencies})['$1']?0:1)" 2>/dev/null && [ -d "node_modules/$1" ]; }
+# Next.js reads both; `clerk env pull` writes .env.local unless told otherwise.
+env_set() { grep -qsE "^$1=.+" .env .env.local; }
 
 echo
 echo "Setup"
 node -e 'process.exit(parseInt(process.versions.node) >= 22 ? 0 : 1)' \
   && ok "node $(node -v)" || no "node 22+ required (have $(node -v 2>/dev/null || echo none))"
 [ -d node_modules ] && ok "dependencies installed" || no "run: npm install"
-[ -f .env ] && ok ".env exists" || no "run: cp .env.example .env"
+{ [ -f .env ] || [ -f .env.local ]; } && ok ".env exists" || no "run: cp .env.example .env"
 env_set OPENROUTER_API_KEY && ok "OPENROUTER_API_KEY set" || no "OPENROUTER_API_KEY missing in .env"
-command -v clerk >/dev/null && ok "clerk CLI on PATH" || todo "npm i -g clerk  (optional but handy)"
-if ls -d .claude/skills/clerk-* .agents/skills/clerk-* >/dev/null 2>&1; then
+command -v clerk >/dev/null && ok "clerk CLI on PATH" || no "run: npm i -g clerk && clerk login"
+# Claude Code reads .claude/skills; a symlink checked out as a text file (Windows) doesn't count.
+if [ -f .claude/skills/clerk-cli/SKILL.md ]; then
   ok "clerk skills installed"
 else
   no "run: npx skills add clerk/skills"
@@ -32,6 +35,8 @@ env_set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && ok "publishable key set" || todo "n
 env_set CLERK_SECRET_KEY && ok "secret key set" || todo "not yet: CLERK_SECRET_KEY"
 { [ -f proxy.ts ] || [ -f src/proxy.ts ] || [ -f middleware.ts ] || [ -f src/middleware.ts ]; } && ok "proxy.ts/middleware.ts exists" || todo "not yet: proxy.ts (Next 16) or middleware.ts with clerkMiddleware"
 grep -rqs "ClerkProvider" app/ && ok "<ClerkProvider> wired in app/" || todo "not yet: <ClerkProvider> in app/layout.tsx"
+grep -qsE "currentUser|auth\(" app/api/chat/route.ts \
+  && ok "/api/chat passes the Clerk user to buildAgent()" || todo "not yet: /api/chat should pass the signed-in user's name"
 
 echo
 echo "ISSUE-1 - MCP server"
@@ -48,21 +53,33 @@ grep -rqs "buildAgent" app/*transport*/ 2>/dev/null \
 if [ -n "${MCP_URL:-}" ]; then
   echo
   echo "Live check - $MCP_URL"
-  code=$(curl -s -o /dev/null -w '%{http_code}' "$MCP_URL/mcp")
-  [ "$code" = "401" ] && ok "/mcp returns 401 (auth required)" || no "/mcp returned $code, expected 401"
-  meta=$(curl -s "$MCP_URL/.well-known/oauth-protected-resource/mcp")
-  echo "$meta" | grep -q authorization_servers \
-    && ok "protected-resource metadata served" || no "no protected-resource metadata"
-  case "$MCP_URL" in
-    *localhost*|*127.0.0.1*) ;;
-    *) echo "$meta" | grep -q "localhost" \
-         && no "metadata still advertises localhost" \
-         || ok "no localhost in protected-resource metadata" ;;
-  esac
+  headers=$(curl -s -o /dev/null -D - --max-time 15 "$MCP_URL/mcp")
+  code=$(printf '%s' "$headers" | awk 'toupper($1) ~ /^HTTP/ {c=$2} END {print c}')
+  if [ -z "$code" ]; then
+    no "$MCP_URL not reachable - is \`npm run dev\` running / the deploy finished?"
+  else
+    if [ "$code" = "401" ]; then
+      ok "/mcp returns 401 (auth required)"
+      printf '%s' "$headers" | grep -qi '^www-authenticate:.*resource_metadata=.*oauth-protected-resource/mcp' \
+        && ok "WWW-Authenticate points at the resource metadata" \
+        || no "401 has no WWW-Authenticate resource_metadata (check withMcpAuth resourceMetadataPath)"
+    else
+      no "/mcp returned $code, expected 401"
+    fi
+    meta=$(curl -s --max-time 15 "$MCP_URL/.well-known/oauth-protected-resource/mcp")
+    echo "$meta" | grep -q authorization_servers \
+      && ok "protected-resource metadata served" || no "no protected-resource metadata"
+    case "$MCP_URL" in
+      *localhost*|*127.0.0.1*) ;;
+      *) echo "$meta" | grep -q "localhost" \
+           && no "metadata still advertises localhost" \
+           || ok "no localhost in protected-resource metadata" ;;
+    esac
+  fi
 else
   echo
   todo "set MCP_URL=http://localhost:3000 (or your https://<app>.vercel.app) to run live HTTP checks"
 fi
 
 echo
-printf '%d passing, %d to fix\n\n' "$pass" "$fail"
+printf '%d passing, %d to fix, %d not yet done\n\n' "$pass" "$fail" "$pending"
