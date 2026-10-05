@@ -25,7 +25,7 @@ most of the OAuth metadata.
 ### 1. Deploy to Vercel
 
 ```bash
-vercel login      # you, once — opens a browser
+vercel whoami     # logged in? If not, stop: the learner runs vercel login
 vercel            # link + preview deploy
 ```
 
