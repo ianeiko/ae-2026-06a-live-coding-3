@@ -29,6 +29,7 @@ and [Vercel](https://vercel.com) accounts (Vercel is needed only for ISSUE-2).
 cp .env.example .env      # fill in OPENROUTER_API_KEY
 npx skills add langchain-ai/langchain-skills --skill '*' --yes
 npm i -g clerk && clerk login
+npm i -g vercel           # ISSUE-2 deploys with it
 bash scripts/check.sh     # [!] = fix now, [ ] = the exercise will do it
 ```
 
@@ -76,7 +77,7 @@ Start this only once ISSUE-1's acceptance criteria pass.
 
 ```
 Read @ISSUE-2.md and implement it. Deploy to Vercel with the Vercel CLI
-(npx vercel; stop if I need to log in), set the env vars from my .env without
+(vercel; stop if I need to log in), set the env vars from my .env without
 printing them, and make sure nothing in the .well-known OAuth metadata points
 at localhost.
 
