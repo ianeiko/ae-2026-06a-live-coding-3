@@ -110,7 +110,8 @@ Review every diff before you accept it.
 | `authInfo` is undefined inside a tool | The token was never verified. Check for `acceptsToken: 'oauth_token'`. |
 | `pirate` shows as connected, but there's no `ask-the-pirate` tool | Tools load at startup. Restart Claude Code. |
 | `inputSchema` type errors in `app/[transport]/route.ts` | `mcp-handler` 2.x needs zod 4: `npm install zod@^4`. |
-| The deployed `.well-known` advertises the wrong host | ISSUE-2 §2. |
+| The deployed `.well-known` advertises the wrong host | A proxy is rewriting `Host` — ISSUE-2 §2. |
+| `npm run check` against Vercel: `/mcp returned 302` | That's a preview URL behind Deployment Protection. Use the production URL — ISSUE-2 §1. |
 | Deployed sign-in doesn't work even though the keys are set in Vercel | `NEXT_PUBLIC_*` values are inlined at build time. Redeploy. |
 | After `claude mcp remove` + `add`, the server still won't connect | Claude Code kept a stale entry. In `/mcp`, choose Reconnect, then Authenticate. |
 | Windows: `bash: not found`, `$'\r'`, `curl -i` errors, or `/clerk` does nothing | See [WINDOWS.md](./WINDOWS.md). |
