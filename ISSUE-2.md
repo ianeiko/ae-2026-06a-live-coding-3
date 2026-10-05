@@ -25,8 +25,8 @@ most of the OAuth metadata.
 ### 1. Deploy to Vercel
 
 ```bash
-npx vercel login  # you, once — opens a browser
-npx vercel        # link + preview deploy
+vercel login      # you, once — opens a browser
+vercel            # link + preview deploy
 ```
 
 Set the environment variables on the project (`vercel env add`, or the
@@ -35,7 +35,7 @@ dashboard):
 - `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL`
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
 
-Then `npx vercel --prod`.
+Then `vercel --prod`.
 
 Set the env vars **before** the production build, not after.
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is inlined into the client bundle at build
