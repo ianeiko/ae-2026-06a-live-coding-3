@@ -38,6 +38,6 @@ appendix is for people who'd rather stay in PowerShell.
 
 ### Not a problem
 
-`npm install`, `npm run dev`, `npm run build`, `npx vercel`, `npm i -g clerk`,
+`npm install`, `npm run dev`, `npm run build`, `vercel`, `npm i -g clerk`,
 `clerk login`, and every `claude mcp` command are cross-platform as written.
 The OAuth flow opens your default browser either way.
