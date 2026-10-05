@@ -4,8 +4,8 @@ import { currentUser } from "@clerk/nextjs/server";
 
 import { buildAgent, type ChatTurn } from "@/lib/agent";
 
-const getMessageText = (message: UIMessage) =>
-  message.parts
+const getMessageText = (message?: UIMessage) =>
+  (message?.parts ?? [])
     .filter((p): p is TextUIPart => p.type === "text")
     .map((p) => p.text)
     .join("");
@@ -21,13 +21,17 @@ export async function POST(req: NextRequest) {
     const messages: UIMessage[] = body.messages ?? [];
     const history = messages.slice(0, -1).map(toChatTurn);
     const question = getMessageText(messages[messages.length - 1]);
+    if (!question) {
+      return NextResponse.json(
+        { error: "No message provided" },
+        { status: 400 },
+      );
+    }
 
     // null when signed out, so the pirate stays anonymous.
     const user = await currentUser();
-    const stream = await buildAgent(user?.firstName ?? undefined).stream(
-      question,
-      history,
-    );
+    const userName = user?.firstName ?? user?.username ?? undefined;
+    const stream = await buildAgent(userName).stream(question, history);
 
     return createTextStreamResponse({ stream });
   } catch (e: any) {

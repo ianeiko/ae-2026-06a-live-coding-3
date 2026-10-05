@@ -21,9 +21,8 @@ const handler = createMcpHandler((server) => {
       // Set by verifyClerkToken from the OAuth token's subject.
       const userId = http?.authInfo?.extra?.userId as string;
       const user = await clerk.users.getUser(userId);
-      const answer = await buildAgent(user.firstName ?? undefined).invoke(
-        question,
-      );
+      const userName = user.firstName ?? user.username ?? undefined;
+      const answer = await buildAgent(userName).invoke(question);
 
       return { content: [{ type: "text", text: answer }] };
     },
