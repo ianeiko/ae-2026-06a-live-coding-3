@@ -29,7 +29,6 @@ and [Vercel](https://vercel.com) accounts (Vercel is needed only for ISSUE-2).
 cp .env.example .env      # fill in OPENROUTER_API_KEY
 npx skills add langchain-ai/langchain-skills --skill '*' --yes
 npm i -g clerk && clerk login
-npm i -g vercel           # ISSUE-2 deploys with it
 bash scripts/check.sh     # [!] = fix now, [ ] = the exercise will do it
 ```
 
@@ -73,7 +72,12 @@ acceptance criteria. Do not touch ISSUE-2.
 ```
 
 **2 — [ISSUE-2.md](./ISSUE-2.md): deploy to Vercel and connect to the public URL.**
-Start this only once ISSUE-1's acceptance criteria pass.
+Start this only once ISSUE-1's acceptance criteria pass. First install the
+Vercel CLI and log in yourself (it opens a browser):
+
+```bash
+npm i -g vercel && vercel login
+```
 
 ```
 Read @ISSUE-2.md and implement it. Deploy to Vercel with the Vercel CLI
