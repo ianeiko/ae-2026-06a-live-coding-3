@@ -26,10 +26,10 @@ most of the OAuth metadata.
 
 ```bash
 vercel whoami     # logged in? If not, stop: the learner runs vercel login
-vercel            # link + preview deploy
+vercel link       # create/link the project, no deploy yet
 ```
 
-Set the environment variables on the project (`vercel env add`, or the
+Set the environment variables for **Production** (`vercel env add`, or the
 dashboard):
 
 - `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL`
@@ -42,27 +42,34 @@ Set the env vars **before** the production build, not after.
 time, so a deploy that ran without it stays broken until you redeploy — the
 value appearing in `vercel env ls` afterwards changes nothing.
 
-### 2. Fix the URLs OAuth cares about
+Use the production URL (`https://<your-app>.vercel.app`) from here on. Preview
+URLs (`<your-app>-<hash>-<team>.vercel.app`) sit behind Vercel's Deployment
+Protection: they answer `302` to a Vercel login page, so neither
+`npm run check` nor Claude Code can reach them.
 
-Metadata documents advertise absolute URLs. If anything still says
+### 2. Check the URLs OAuth cares about
+
+Metadata documents advertise absolute URLs. If anything says
 `http://localhost:3000`, clients will try to authenticate there.
-
-The obstacle is not that someone hardcoded `localhost` — nobody did. It is
-that Clerk's `protectedResourceHandlerClerk` derives the origin from `req.url`,
-and behind Vercel's proxy `req.url` carries the *internal* host, not the one
-the client dialled. The fix is to stop using that handler and call
-`generateClerkProtectedResourceMetadata` (from `@clerk/mcp-tools/server`)
-yourself, passing a `resourceUrl` you built from the request.
-
-Have Claude Code derive the base URL from the incoming request
-(`x-forwarded-host` + `x-forwarded-proto`) or from
-`VERCEL_PROJECT_PRODUCTION_URL` rather than hardcoding it, and re-check:
 
 ```bash
 curl -s https://<your-app>.vercel.app/.well-known/oauth-protected-resource/mcp | jq
+curl -s -D - -o /dev/null https://<your-app>.vercel.app/mcp | grep -i www-authenticate
 ```
 
-Every URL in that response should be your deployed origin.
+`resource` and the `resource_metadata` in the 401 should both be your
+deployed origin; `authorization_servers` should be your Clerk instance. On
+Vercel this works without code changes: nobody hardcoded `localhost`, and both
+`protectedResourceHandlerClerk` (from `req.url`) and `mcp-handler` (from
+`x-forwarded-host`) derive the origin from the request the client actually
+made. That is the point of this step — the metadata is computed per request,
+so the same code is correct on `localhost` and in production.
+
+It breaks behind a proxy that rewrites the `Host` header (some nginx, Docker
+or tunnel setups): `req.url` then carries the internal host. The fix there is
+to replace `protectedResourceHandlerClerk` with a direct call to
+`generateClerkProtectedResourceMetadata` (from `@clerk/mcp-tools/server`),
+passing a `resourceUrl` built from `x-forwarded-host` + `x-forwarded-proto`.
 
 ### 3. Clerk: production vs development
 
@@ -98,7 +105,7 @@ identity, zero shared secrets.
 - [ ] The production URL loads, and signing in works there.
 - [ ] `MCP_URL=https://<your-app>.vercel.app npm run check` reports
       `0 to fix, 0 not yet done`. That covers the 401 with `WWW-Authenticate`
-      and the absence of `localhost` in the metadata.
+      and the metadata advertising your deployed origin, not `localhost`.
 - [ ] Claude Code authenticates against the deployed server and calls the tool.
 - [ ] A second Clerk account gets its own name back from the tool. Ask the
       person next to you, or do it yourself: add the server again as `pirate2`,
