@@ -1,24 +1,35 @@
 import { ChatWindow } from "@/components/ChatWindow";
+import { GuideInfoBox } from "@/components/guide/GuideInfoBox";
 
 export default function Home() {
+  const InfoCard = (
+    <GuideInfoBox>
+      <ul>
+        <li className="text-l">
+          🏴‍☠️
+          <span className="ml-2">
+            Patchy is a pirate agent built with{" "}
+            <a href="https://js.langchain.com/" target="_blank">
+              LangChain.js
+            </a>
+            . The agent lives in <code>lib/agent.ts</code>.
+          </span>
+        </li>
+        <li className="text-l">
+          👇
+          <span className="ml-2">
+            Try asking e.g. <code>What&apos;s my name?</code> below!
+          </span>
+        </li>
+      </ul>
+    </GuideInfoBox>
+  );
   return (
     <ChatWindow
       endpoint="api/chat"
       emoji="🏴‍☠️"
-      placeholder="Ask the pirate anything..."
-      emptyStateComponent={
-        <div className="p-4 md:p-8 max-w-[768px] mx-auto flex flex-col gap-4">
-          <h1 className="text-2xl">🏴‍☠️ LangChain agent + Clerk MCP</h1>
-          <p>
-            One LangChain agent, two front doors: this chat window, and an MCP
-            server that Claude Code can call on your behalf once Clerk has
-            authenticated you.
-          </p>
-          <p className="text-muted-foreground">
-            Work through <code>ISSUE-1.md</code> to build the second door.
-          </p>
-        </div>
-      }
+      placeholder="I'm an LLM pretending to be a pirate! Ask me about the pirate life!"
+      emptyStateComponent={InfoCard}
     />
   );
 }

@@ -1,48 +1,77 @@
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
+import { createAgent } from "langchain";
+import { AIMessageChunk } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 
-const SYSTEM = `You are Patchy, a salty but helpful pirate.
-Answer the user's question in character, in three sentences or fewer.
-{persona}`;
+/** Earlier turns of the conversation, oldest first. */
+export type ChatTurn = { role: "user" | "assistant"; content: string };
 
-/**
- * The one and only agent in this app.
- *
- * Both the browser chat UI and the MCP server call this, so anything you teach
- * the agent here is immediately available to Claude Code as a tool.
- */
-export function buildAgent(userName?: string) {
-  const prompt = ChatPromptTemplate.fromMessages([
-    ["system", SYSTEM],
-    ["human", "{question}"],
-  ]);
+const systemPrompt = (userName?: string) =>
+  [
+    "You are a pirate named Patchy. All responses must be extremely verbose and in pirate dialect.",
+    userName
+      ? `The user's name is ${userName}. Greet them by name.`
+      : "You don't know the user's name. If asked, say you don't know it.",
+  ].join("\n");
 
-  const model = new ChatOpenAI({
+// OpenRouter speaks the OpenAI API, so ChatOpenAI just needs a different base URL.
+const model = () =>
+  new ChatOpenAI({
     model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini",
-    temperature: 0.8,
     apiKey: process.env.OPENROUTER_API_KEY,
     configuration: {
-      baseURL:
-        process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
+      baseURL: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
     },
+    temperature: 0.8,
   });
 
-  const persona = userName
-    ? `You are speaking to ${userName}. Greet them by name.`
-    : `You do not know the user's name.`;
+/**
+ * The single source of agent behaviour. Both the chat route and (ISSUE-1)
+ * the MCP tool go through this.
+ */
+export function buildAgent(userName?: string) {
+  const agent = createAgent({
+    model: model(),
+    tools: [],
+    systemPrompt: systemPrompt(userName),
+  });
+
+  const messages = (question: string, history: ChatTurn[]) => [
+    ...history,
+    { role: "user" as const, content: question },
+  ];
 
   return {
-    chain: prompt.pipe(model),
-    stream: (question: string) =>
-      prompt.pipe(model).pipe(new StringOutputParser()).stream({
-        question,
-        persona,
-      }),
-    invoke: (question: string) =>
-      prompt
-        .pipe(model)
-        .pipe(new StringOutputParser())
-        .invoke({ question, persona }),
+    /** Streams the answer as text chunks. */
+    async stream(
+      question: string,
+      history: ChatTurn[] = [],
+    ): Promise<ReadableStream<string>> {
+      const events = await agent.stream(
+        { messages: messages(question, history) },
+        { streamMode: "messages" },
+      );
+      return new ReadableStream<string>({
+        async start(controller) {
+          try {
+            for await (const [chunk] of events) {
+              if (AIMessageChunk.isInstance(chunk) && chunk.text) {
+                controller.enqueue(chunk.text);
+              }
+            }
+            controller.close();
+          } catch (e) {
+            controller.error(e);
+          }
+        },
+      });
+    },
+
+    /** Returns the full answer as a string. */
+    async invoke(question: string, history: ChatTurn[] = []): Promise<string> {
+      const result = await agent.invoke({
+        messages: messages(question, history),
+      });
+      return result.messages[result.messages.length - 1].text;
+    },
   };
 }

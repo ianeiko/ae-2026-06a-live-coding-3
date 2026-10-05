@@ -1,17 +1,15 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-/**
- * Next.js 16 renamed `middleware.ts` to `proxy.ts` (same code, new filename).
- *
- * Public-first: nothing is protected here. The chat page must stay open to
- * anonymous visitors, and the MCP routes (`/mcp`, `/.well-known/*`) do their
- * own OAuth token check — a session cookie must never be required there.
- */
+// Public-first: nothing is protected here. The chat page, /mcp and the
+// /.well-known OAuth metadata must all be reachable without a session cookie;
+// /mcp checks its own OAuth bearer token in app/[transport]/route.ts.
 export default clerkMiddleware();
 
 export const config = {
   matcher: [
+    // Skip Next.js internals and static files
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };

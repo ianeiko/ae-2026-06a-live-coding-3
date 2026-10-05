@@ -3,7 +3,7 @@ import {
   metadataCorsOptionsRequestHandler,
 } from "@clerk/mcp-tools/next";
 
-// Back-compat for clients on older MCP spec versions.
+// Back-compat for older MCP clients that look for auth server metadata here.
 const handler = authServerMetadataHandlerClerk();
 const corsHandler = metadataCorsOptionsRequestHandler();
 

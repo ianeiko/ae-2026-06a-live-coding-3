@@ -5,8 +5,8 @@ export default defineConfig([
   ...nextVitals,
   globalIgnores([
     ".agents/**",
+    ".claude/**",
     ".next/**",
-    ".yarn/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

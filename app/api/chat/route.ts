@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createTextStreamResponse } from "ai";
-import type { UIMessage, TextUIPart } from "ai";
-
+import { type UIMessage, type TextUIPart, createTextStreamResponse } from "ai";
 import { currentUser } from "@clerk/nextjs/server";
 
-import { buildAgent } from "@/lib/agent";
+import { buildAgent, type ChatTurn } from "@/lib/agent";
 
-/**
- * Browser chat endpoint. Streams the agent's answer back to <ChatWindow />.
- */
+const getMessageText = (message?: UIMessage) =>
+  (message?.parts ?? [])
+    .filter((p): p is TextUIPart => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+
+const toChatTurn = (message: UIMessage): ChatTurn => ({
+  role: message.role === "user" ? "user" : "assistant",
+  content: getMessageText(message),
+});
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const messages: UIMessage[] = body.messages ?? [];
-    const last = messages[messages.length - 1];
-
-    const question = (last?.parts ?? [])
-      .filter((p): p is TextUIPart => p.type === "text")
-      .map((p) => p.text)
-      .join("");
-
+    const history = messages.slice(0, -1).map(toChatTurn);
+    const question = getMessageText(messages[messages.length - 1]);
     if (!question) {
       return NextResponse.json(
         { error: "No message provided" },
@@ -27,12 +28,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Anonymous visitors are fine: currentUser() returns null and the agent
-    // falls back to its "I don't know your name" persona.
+    // null when signed out, so the pirate stays anonymous.
     const user = await currentUser();
     const userName = user?.firstName ?? user?.username ?? undefined;
-
-    const stream = await buildAgent(userName).stream(question);
+    const stream = await buildAgent(userName).stream(question, history);
 
     return createTextStreamResponse({ stream });
   } catch (e: any) {

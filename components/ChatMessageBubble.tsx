@@ -14,10 +14,11 @@ export function ChatMessageBubble(props: {
   return (
     <div
       className={cn(
-        "rounded-[24px] max-w-[80%] mb-8 flex",
+        `rounded-[24px] max-w-[80%] mb-8 flex`,
         props.message.role === "user"
-          ? "bg-secondary text-secondary-foreground px-4 py-2 ml-auto"
-          : "mr-auto",
+          ? "bg-secondary text-secondary-foreground px-4 py-2"
+          : null,
+        props.message.role === "user" ? "ml-auto" : "mr-auto",
       )}
     >
       {props.message.role !== "user" && (
@@ -25,6 +26,7 @@ export function ChatMessageBubble(props: {
           {props.aiEmoji}
         </div>
       )}
+
       <div className="whitespace-pre-wrap flex flex-col">
         <span>{getMessageText(props.message)}</span>
       </div>
