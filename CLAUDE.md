@@ -1,36 +1,40 @@
 # CLAUDE.md
 
 Teaching repo: one LangChain agent, exposed both as a chat UI and (the
-exercise) as a Clerk-authenticated MCP server. Learners drive you through
-`ISSUE-1.md` then `ISSUE-2.md`.
+exercise) as a Clerk-authenticated MCP server. Learners start from an empty
+repo and drive you through `ISSUE-0.md`, `ISSUE-1.md`, then `ISSUE-2.md`.
 
 ## Rules
 
-- Read `lib/agent.ts` before touching anything. It is the single source of
-  agent behaviour; both the chat route and the MCP tool must go through it.
-- Use the installed Clerk skills — `clerk-setup`, `clerk-nextjs-patterns`,
-  `clerk-cli`, `clerk-orgs`, `clerk-billing`, `clerk-webhooks`. Don't
-  reconstruct Clerk APIs from memory.
+- Work through the issues in order. Don't start one while the previous one is
+  unfinished.
+- `lib/agent.ts` (created in ISSUE-0) is the single source of agent behaviour.
+  Read it before changing anything; the chat route and the MCP tool must both
+  go through it.
+- Use the installed skills instead of reconstructing APIs from memory:
+  LangChain (`langchain-fundamentals`, `langchain-dependencies`) for ISSUE-0;
+  Clerk (`clerk-setup`, `clerk-nextjs-patterns`, `clerk-cli`, `clerk-orgs`,
+  `clerk-billing`, `clerk-webhooks`) from ISSUE-1 on.
 - MCP server work follows `@clerk/mcp-tools` + `mcp-handler`. The canonical
   shape is Clerk's "build an MCP server" guide for Next.js.
 - Never write secrets into tracked files. `.env` only.
 - Keep diffs small and reviewable — the learner is reading them.
-- Don't do ISSUE-2 work while ISSUE-1 is unfinished.
 
 ## Layout
 
 ```
-lib/agent.ts              the agent (LangChain + OpenRouter)
-app/api/chat/route.ts     browser door
-app/[transport]/route.ts  MCP door — learner creates this
-components/ChatWindow.tsx chat UI
-scripts/check.sh          progress check, `npm run check`
+lib/agent.ts              the agent (LangChain + OpenRouter)     ISSUE-0
+app/api/chat/route.ts     browser door                           ISSUE-0
+components/ChatWindow.tsx chat UI                                ISSUE-0
+app/[transport]/route.ts  MCP door                               ISSUE-1
+scripts/check.sh          progress check (already here)
 ```
 
 ## Commands
 
 ```bash
-npm run dev
+bash scripts/check.sh   # works before package.json exists
+npm run dev             # after ISSUE-0
 npm run check
 npm run build
 ```

@@ -17,7 +17,6 @@ echo
 echo "Setup"
 node -e 'process.exit(parseInt(process.versions.node) >= 22 ? 0 : 1)' \
   && ok "node $(node -v)" || no "node 22+ required (have $(node -v 2>/dev/null || echo none))"
-[ -d node_modules ] && ok "dependencies installed" || no "run: npm install"
 { [ -f .env ] || [ -f .env.local ]; } && ok ".env exists" || no "run: cp .env.example .env"
 env_set OPENROUTER_API_KEY && ok "OPENROUTER_API_KEY set" || no "OPENROUTER_API_KEY missing in .env"
 command -v clerk >/dev/null && ok "clerk CLI on PATH" || no "run: npm i -g clerk && clerk login"
@@ -27,6 +26,31 @@ if [ -f .claude/skills/clerk-cli/SKILL.md ]; then
 else
   no "run: npx skills add clerk/skills"
 fi
+# Only ISSUE-0 needs them; once the app exists they're optional.
+if [ -f .claude/skills/langchain-fundamentals/SKILL.md ]; then
+  ok "langchain skills installed"
+elif [ ! -f lib/agent.ts ]; then
+  no "run: npx skills add langchain-ai/langchain-skills --skill '*' --yes"
+fi
+
+echo
+echo "ISSUE-0 - Pirate chat app"
+if [ -f package.json ]; then
+  ok "package.json exists"
+  [ -d node_modules ] && ok "dependencies installed" || no "run: npm install"
+  node -e "process.exit(require('./package.json').scripts?.check ? 0 : 1)" 2>/dev/null \
+    && ok "npm run check script" || todo "not yet: \"check\": \"bash scripts/check.sh\" in package.json"
+else
+  todo "not yet: package.json (scaffold from langchain-nextjs-template)"
+fi
+has_dep next && ok "next installed" || todo "not yet: next"
+has_dep @langchain/openai && ok "@langchain/openai installed" || todo "not yet: @langchain/openai"
+grep -qs "export function buildAgent" lib/agent.ts \
+  && ok "lib/agent.ts exports buildAgent()" || todo "not yet: lib/agent.ts exporting buildAgent(userName?)"
+grep -qs "OPENROUTER" lib/agent.ts \
+  && ok "agent uses OpenRouter" || todo "not yet: agent reads OPENROUTER_* from env"
+grep -qs "buildAgent" app/api/chat/route.ts \
+  && ok "/api/chat calls buildAgent()" || todo "not yet: app/api/chat/route.ts calling buildAgent()"
 
 echo
 echo "ISSUE-1 - Clerk auth"

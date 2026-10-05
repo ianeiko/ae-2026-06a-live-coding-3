@@ -1,15 +1,16 @@
-# Live coding 3 — add a Clerk-authenticated MCP server to a LangChain app
+# Live coding 3 — a LangChain agent with a Clerk-authenticated MCP server
 
-You start with a working LangChain chat app. By the end of the session, Claude
-Code calls that same agent as an MCP **tool**, signed in as *you* through
-Clerk, and the pirate greets you by name. You don't hand-write the OAuth
-plumbing. Clerk's skills and libraries handle it, and your job is to review
-and verify the result.
+You start with an empty repo. First Claude Code builds a LangChain chat app
+from the official template. Then it gives that same agent a second front door:
+an MCP **tool** that Claude Code calls, signed in as *you* through Clerk, and
+the pirate greets you by name. You don't hand-write the app or the OAuth
+plumbing. LangChain's and Clerk's skills and libraries handle it, and your job
+is to review and verify the result.
 
 ```
-  browser ─────▶ /api/chat ──┐
+  browser ─────▶ /api/chat ──┐                                     ISSUE-0
                              ├─▶ lib/agent.ts (LangChain + OpenRouter)
-  Claude Code ─▶ /mcp ───────┘
+  Claude Code ─▶ /mcp ───────┘                                     ISSUE-1
                    │ OAuth 2.1
                    ▼
                  Clerk
@@ -25,16 +26,15 @@ On top of Node 22+ and Claude Code you need these accounts: an
 and [Vercel](https://vercel.com) accounts (Vercel is needed only for ISSUE-2).
 
 ```bash
-npm install
 cp .env.example .env      # fill in OPENROUTER_API_KEY
+npx skills add langchain-ai/langchain-skills --skill '*' --yes
 npm i -g clerk && clerk login
-npm run dev               # http://localhost:3000 — chat with the pirate
-npm run check             # [!] = fix now, [ ] = the exercise will do it
+bash scripts/check.sh     # [!] = fix now, [ ] = the exercise will do it
 ```
 
-Clerk's agent skills are already in `.claude/skills/`. In Claude Code, `/clerk`
-should route you to a Clerk skill. If it doesn't, run
-`npx skills add clerk/skills`.
+Clerk's agent skills are already in `.claude/skills/`, and the second command
+adds LangChain's next to them. In Claude Code, `/clerk` should route you to a
+Clerk skill. If it doesn't, run `npx skills add clerk/skills`.
 
 Create an application in the [Clerk dashboard](https://dashboard.clerk.com)
 (email + Google is fine), then run `clerk link` here and pick it.
@@ -44,7 +44,18 @@ Create an application in the [Clerk dashboard](https://dashboard.clerk.com)
 Start `claude` in this directory and paste these. Each issue file contains the
 details, so each prompt only needs to point at it.
 
+**0 — [ISSUE-0.md](./ISSUE-0.md): the pirate chat app, from the LangChain template.**
+
+```
+Read @ISSUE-0.md and implement it end to end. Use the langchain-fundamentals
+and langchain-dependencies skills for the LangChain code.
+
+Verify with npm run check, npm run lint and npm run build, then start the dev
+server and tell me to try the chat at localhost:3000. Do not start ISSUE-1.
+```
+
 **1 — [ISSUE-1.md](./ISSUE-1.md): sign-in plus an MCP server at `/mcp`, locally.**
+Start this once ISSUE-0's acceptance criteria pass.
 
 ```
 Read @ISSUE-1.md and @lib/agent.ts, then implement ISSUE-1 end to end.
@@ -76,8 +87,9 @@ exact `claude mcp add` command and walk me through the acceptance criteria.
 **If something breaks:**
 
 ```
-`npm run check` says: <paste output>. Diagnose it against @ISSUE-1.md and fix
-it. Use the clerk-cli skill to inspect my instance config rather than guessing.
+`npm run check` says: <paste output>. Diagnose it against the issue I'm on
+(@ISSUE-0.md or @ISSUE-1.md) and fix it. Use the clerk-cli skill to inspect my
+Clerk instance config rather than guessing.
 ```
 
 Review every diff before you accept it.
@@ -86,6 +98,8 @@ Review every diff before you accept it.
 
 | Symptom | Cause |
 | --- | --- |
+| `npm run lint` crashes with `scopeManager.addGlobals is not a function` | The template ships ESLint 10. Pin `eslint@^9` — ISSUE-0 §4. |
+| `npm run check`: missing script | Before ISSUE-0 there is no `package.json`. Run `bash scripts/check.sh`. |
 | `/mcp` in Claude Code never prompts you to log in | Dynamic client registration is off — ISSUE-1 §1. |
 | Login works, then every tool call returns 401 | `withMcpAuth` is missing `resourceMetadataPath`, or `proxy.ts` requires a session on `/mcp` or `/.well-known/*`. |
 | `authInfo` is undefined inside a tool | The token was never verified. Check for `acceptsToken: 'oauth_token'`. |
@@ -102,5 +116,6 @@ Review every diff before you accept it.
   · [`clerk/mcp-tools`](https://github.com/clerk/mcp-tools)
   · [`clerk/skills`](https://github.com/clerk/skills)
   · [MCP spec: authorization](https://modelcontextprotocol.io/specification/basic/authorization)
-- The app is trimmed from
-  [`langchain-ai/langchain-nextjs-template`](https://github.com/langchain-ai/langchain-nextjs-template).
+- [`langchain-ai/langchain-nextjs-template`](https://github.com/langchain-ai/langchain-nextjs-template)
+  — ISSUE-0's starting point
+  · [`langchain-ai/langchain-skills`](https://github.com/langchain-ai/langchain-skills)

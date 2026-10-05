@@ -5,6 +5,8 @@ Clerk, and the pirate greets you by your real name.
 
 **Scope:** local only (`localhost:3000`). Deployment is ISSUE-2.
 
+**Prerequisite:** ISSUE-0's acceptance criteria pass.
+
 ---
 
 ## Why this is the interesting part
@@ -26,8 +28,8 @@ use them, and to verify the result rather than trust it.
 
 ### 1. Clerk instance
 
-With the app created and `clerk link`ed (README → Setup), the keys go into
-`.env`:
+With the Clerk application created and `clerk link`ed (README → Setup), the
+keys go into `.env`:
 
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
@@ -95,7 +97,7 @@ Check these yourself, because they cause the usual bugs:
   — without that path the client can't discover how to log in.
 - Next.js 16 renamed `middleware.ts` to `proxy.ts` — same `clerkMiddleware()`
   call, new filename.
-- `mcp-handler` 2.x needs **zod 4**. The starter ships zod 3, so `npm install
+- `mcp-handler` 2.x needs **zod 4**. The template ships zod 3, so `npm install
   zod@^4` — otherwise `inputSchema` fails to typecheck against
   `StandardSchemaWithJSON`.
 - The tool handler's second argument is the request context, and the token lives
